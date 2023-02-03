@@ -115,26 +115,7 @@ app.get('/api/players/:userName/best-rounds', async (req, res) => {
 //     }
 // });
 
-// get a specific player's specific round
-app.get('/api/players/:id/:score', async (req, res) => {
-    const id = req.params.id;
-    const filter = { id: id };
-    const scoreId = Number(req.params.score);
 
-    const player = await PlayerModel.findOne(filter);
-
-    const score = player.roundsPlayed.find(round => round.id === scoreId);
-
-    if (!score) {
-        res.status(404).send('Score not found');
-    }
-    try {
-        res.json(score);
-    }
-    catch (err) {
-        res.status(400).send(err, 'no score found with that id');
-    }
-});
 
 // delete a specific player's specific round
 app.delete('/api/players/:id/:score', async (req, res) => {
@@ -169,6 +150,7 @@ app.post('/api/newplayer', (req, res) => {
         firstName: req.body.firstName,
         lastName: req.body.lastName,
         userName: req.body.userName,
+        bestRounds: [],
         totalScore: 0,
     });
     player.save().then((newPlayer) => {
