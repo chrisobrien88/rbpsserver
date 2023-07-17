@@ -225,8 +225,9 @@ app.put('/api/players/:username/update-handicap-index', async (req, res) => {
 // create new round
 app.post('/api/players/:userName/submit-new-round', async (req, res) => {
     console.log('atttempt to create new round');
-    
+    // player name
     const id = req.body.userName;
+    // change this to playerFilter
     const filter = { userName: id };
     
     const round = new RoundModel({
