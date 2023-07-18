@@ -145,6 +145,7 @@ app.delete('/api/players/:id/:score', async (req, res) => {
 
 // create new player
 app.post('/api/newplayer', (req, res) => {
+    console.log('new player route hit')
     const player = new PlayerModel({
         id: Date.now(),
         // email: req.body.email,
@@ -224,16 +225,17 @@ app.put('/api/players/:username/update-handicap-index', async (req, res) => {
 
 // });
 
+
 // create new round
-app.post('/api/players/:userName/submit-new-round', async (req, res) => {
+app.post('/api/players/submit-new-round', async (req, res) => {
     console.log('atttempt to create new round');
     
-    const id = req.body.userName;
+    const id = req.body.userName.value;
     const filter = { userName: id };
     
     const round = new RoundModel({
         id: Date.now(),
-
+        
         courseHandicap: req.body.courseHandicap,
         handicapIndex: req.body.handicapIndex,
 
@@ -248,7 +250,8 @@ app.post('/api/players/:userName/submit-new-round', async (req, res) => {
         slopeRating: req.body.slopeRating,
         courseRating: req.body.courseRating,
         course: req.body.course,
-        courseStarRating: req.body.courseStarRating,
+        // courseStarRating: req.body.courseStarRating,
+        par: req.body.par,
         datePlayed: req.body.datePlayed,
 
         grossStablefordScore: req.body.grossStablefordScore,
@@ -270,20 +273,20 @@ app.post('/api/players/:userName/submit-new-round', async (req, res) => {
         console.log('round added to best rounds when less than 3');
         player.bestRounds.push(round);
         player.bestRounds.sort((a, b) => (
-            b.slopeAdjustedEighteenHandicapStablefordScore-a.slopeAdjustedEighteenHandicapStablefordScore
+            b.eighteenHandicapStablefordScore-a.eighteenHandicapStablefordScore
         ));
     }
     
     // if there are 3 best rounds, check if the new round is better than the worst round.
-    if (player.bestRounds.length > 2 && round.slopeAdjustedEighteenHandicapStablefordScore > player.bestRounds[2].slopeAdjustedEighteenHandicapStablefordScore) {
+    if (player.bestRounds.length > 2 && round.eighteenHandicapStablefordScore > player.bestRounds[2].eighteenHandicapStablefordScore) {
         player.bestRounds[2] = round;
         console.log('round added to besr rounds when more than 3');
         player.bestRounds.sort((a, b) => (
-            b.slopeAdjustedEighteenHandicapStablefordScore-a.slopeAdjustedEighteenHandicapStablefordScore
+            b.eighteenHandicapStablefordScore-a.eighteenHandicapStablefordScore
             ));
     }
     // update total score
-    player.totalScore = player.bestRounds.map(round => round.slopeAdjustedEighteenHandicapStablefordScore).reduce((a, b) => a + b, 0);
+    player.totalScore = player.bestRounds.map(round => round.eighteenHandicapStablefordScore).reduce((a, b) => a + b, 0);
     console.log('total score: ', player.totalScore);
     player.save();
 

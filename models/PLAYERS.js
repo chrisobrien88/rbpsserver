@@ -91,7 +91,11 @@ const RoundsSchema = new mongoose.Schema({
         type: String,
         required: false
     },
-    courseStarRating: {
+    // courseStarRating: {
+    //     type: Number,
+    //     required: false
+    // },
+    par: {
         type: Number,
         required: false
     },
