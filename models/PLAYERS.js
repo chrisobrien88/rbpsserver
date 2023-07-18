@@ -5,10 +5,10 @@ const PlayerSchema = new mongoose.Schema({
         type: Number,
         required: true
     },
-    email: {
-        type: String,
-        required: true
-    },
+    // email: {
+    //     type: String,
+    //     required: true
+    // },
     userName: {
         type: String,
         required: true
@@ -20,6 +20,10 @@ const PlayerSchema = new mongoose.Schema({
     lastName: {
         type: String,
         required: true
+    },
+    leagueName: {
+        type: String,
+        required: false
     },
     handicapIndex: {
         type: Number,

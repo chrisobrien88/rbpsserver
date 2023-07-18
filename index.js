@@ -4,7 +4,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const app = express();
 const cors = require('cors');
-const port = process.env.PORT || 5000;
+const port = 5000;
 
 
 const PlayerModel = require('./models/PLAYERS').Player;
@@ -25,6 +25,7 @@ app.get('/', (req, res) => {
 
 // get all players
 app.get('/api/players/', async (req, res) => {
+    console.log("get all players route hit")
     PlayerModel.find({}, (err, result) => {
         if (err) {
             res.send(err);
@@ -146,10 +147,11 @@ app.delete('/api/players/:id/:score', async (req, res) => {
 app.post('/api/newplayer', (req, res) => {
     const player = new PlayerModel({
         id: Date.now(),
-        email: req.body.email,
+        // email: req.body.email,
         firstName: req.body.firstName,
         lastName: req.body.lastName,
         userName: req.body.userName,
+        leagueName: req.body.leagueName,
         bestRounds: [],
         totalScore: 0,
     });
@@ -225,9 +227,8 @@ app.put('/api/players/:username/update-handicap-index', async (req, res) => {
 // create new round
 app.post('/api/players/:userName/submit-new-round', async (req, res) => {
     console.log('atttempt to create new round');
-    // player name
+    
     const id = req.body.userName;
-    // change this to playerFilter
     const filter = { userName: id };
     
     const round = new RoundModel({
@@ -314,3 +315,4 @@ app.delete('/api/players/:id', async (req, res) => {
 app.listen(port, () => {
   console.log(`Server is running on: ${port}`);
 })
+
