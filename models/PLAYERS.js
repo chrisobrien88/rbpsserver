@@ -51,6 +51,14 @@ const RoundsSchema = new mongoose.Schema({
         type: Number,
         required: false
     },
+    leagueStartDate: {
+        type: Date,
+        required: false
+    },
+    leagueEndDate: {
+        type: Date,
+        required: false
+    },
     eagles: {
         type: Number,
         required: false

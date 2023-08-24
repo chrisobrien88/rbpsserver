@@ -64,13 +64,15 @@ app.get("/api/players/:userName/best-rounds", async (req, res) => {
   }
   const mostRecentPlayerRounds = player.roundsPlayed.slice(0, 20);
   const eligibleRounds = Math.round(mostRecentPlayerRounds.length * 0.4);
+
   const bestScores = mostRecentPlayerRounds
     .map((round) => round.slopeAdjustedThirtySixHandicapStablefordScore)
     .sort((a, b) => b - a)
     .slice(0, eligibleRounds);
   const totalBestScores = bestScores.reduce((a, b) => a + b, 0);
   const averageBestScores = totalBestScores / bestScores.length;
-  const handicapIndex = Number(((72 - averageBestScores) * 0.88).toFixed(2));
+  const handicapIndex = Number((72 - averageBestScores).toFixed(2));
+
   try {
     res.json({
       scoresArr: bestScores,
@@ -235,6 +237,8 @@ app.post("/api/players/submit-new-round", async (req, res) => {
 
     courseHandicap: req.body.courseHandicap,
     handicapIndex: req.body.handicapIndex,
+    leagueStartDate: req.body.leagueStartDate,
+    leagueEndDate: req.body.leagueEndDate,
 
     eagles: req.body.eagles,
     birdies: req.body.birdies,
@@ -264,37 +268,62 @@ app.post("/api/players/submit-new-round", async (req, res) => {
   const player = await PlayerModel.findOne(filter);
   const roundsPlayed = player.roundsPlayed || [];
 
-  // player.handicapIndex = req.body.handicapIndex;
+  const currentLeagueStartDate = round.leagueStartDate;
+  const currentLeagueEndDate = round.leagueEndDate;
 
-  // add round to bestRounds if there are less than 3 best rounds.
-  if (player.bestRounds.length < 3) {
-    console.log("round added to best rounds when less than 3");
-    player.bestRounds.push(round);
-    player.bestRounds.sort(
-      (a, b) =>
-        b.eighteenHandicapStablefordScore - a.eighteenHandicapStablefordScore
-    );
-  }
+  // check best rounds are played after league start date
+  const bestRounds = player.bestRounds || [];
+  console.log("best rounds: ", bestRounds);
 
-  // if there are 3 best rounds, check if the new round is better than the worst round.
+  bestRounds.map((prevRound) => {
+    if (
+      prevRound.datePlayed < currentLeagueStartDate &&
+      prevRound.datePlayed < currentLeagueEndDate
+    ) {
+      console.log("round removed from best rounds");
+      bestRounds.splice(prevRound, 1);
+    }
+  });
+
+  // add round to best Rounds if round was played after league start date
+  console.log("round date played: ", round.datePlayed);
+  console.log("player league start date: ", round.leagueStartDate);
+  console.log("player league end date: ", round.leagueEndDate);
   if (
-    player.bestRounds.length > 2 &&
-    round.eighteenHandicapStablefordScore >
-      player.bestRounds[2].eighteenHandicapStablefordScore
+    round.datePlayed > round.leagueStartDate &&
+    round.datePlayed < round.leagueEndDate
   ) {
-    player.bestRounds[2] = round;
-    console.log("round added to besr rounds when more than 3");
-    player.bestRounds.sort(
-      (a, b) =>
-        b.eighteenHandicapStablefordScore - a.eighteenHandicapStablefordScore
-    );
+    console.log("round played after league start date and before end date");
+    // add round to bestRounds if there are less than 3 best rounds.
+    if (player.bestRounds.length < 3) {
+      console.log("round added to best rounds when less than 3");
+      player.bestRounds.push(round);
+      player.bestRounds.sort(
+        (a, b) =>
+          b.eighteenHandicapStablefordScore - a.eighteenHandicapStablefordScore
+      );
+    }
+
+    // if there are 3 best rounds, check if the new round is better than the worst round.
+    if (
+      player.bestRounds.length > 2 &&
+      round.eighteenHandicapStablefordScore >
+        player.bestRounds[2].eighteenHandicapStablefordScore
+    ) {
+      player.bestRounds[2] = round;
+      console.log("round added to best rounds when more than 3");
+      player.bestRounds.sort(
+        (a, b) =>
+          b.eighteenHandicapStablefordScore - a.eighteenHandicapStablefordScore
+      );
+    }
   }
-  // update total score
-  player.totalScore = player.bestRounds
-    .map((round) => round.eighteenHandicapStablefordScore)
-    .reduce((a, b) => a + b, 0);
-  console.log("total score: ", player.totalScore);
-  player.save();
+//   update total score
+      player.totalScore = bestRounds
+        .map((round) => round.eighteenHandicapStablefordScore)
+        .reduce((a, b) => a + b, 0);
+      console.log("total score: ", player.totalScore);
+      player.save();
 
   //update handicap index
   const mostRecentTwentyRounds = player.roundsPlayed.slice(0, 19);
@@ -303,17 +332,20 @@ app.post("/api/players/submit-new-round", async (req, res) => {
   console.log("number of rounds played now: ", mostRecentTwentyRounds.length);
   const eligibleRounds = Math.round(mostRecentTwentyRounds.length * 0.4);
   console.log("number of eligible rounds: ", eligibleRounds);
-  const bestScores = mostRecentTwentyRounds
-    .map((round) =>
-      Number(round.slopeAdjustedThirtySixHandicapStablefordScore.toFixed(1))
-    )
-    .slice(0, eligibleRounds)
-    .sort((a, b) => b - a);
-  console.log("best eligible rounds: ", bestScores);
+  let handicapIndex = 0;
+  if (eligibleRounds > 0) {
+    const bestScores = mostRecentTwentyRounds
+      .map((round) =>
+        Number(round.slopeAdjustedThirtySixHandicapStablefordScore.toFixed(1))
+      )
+      .slice(0, eligibleRounds)
+      .sort((a, b) => b - a);
+    console.log("best eligible rounds: ", bestScores);
 
-  const bestScoresMean =
-    bestScores.reduce((a, b) => a + b, 0) / bestScores.length;
-  const handicapIndex = 72 - bestScoresMean.toFixed(2);
+    const bestScoresMean =
+      bestScores.reduce((a, b) => a + b, 0) / bestScores.length;
+    handicapIndex = 72 - bestScoresMean.toFixed(2);
+  }
 
   // bescScoresMean is your score with a 36 handicap. So if you subtract 36 you get how many points BETTER you are than a 36 handicap.
   // e.g. if i get 38 points with a 36 handicap, i am 2 points better than a 36 handicap. so i should do 36 - 2. so it's 36 - (average scores - 36)
@@ -323,6 +355,7 @@ app.post("/api/players/submit-new-round", async (req, res) => {
   const update = {
     roundsPlayed: [round, ...roundsPlayed],
     handicapIndex: handicapIndex,
+    bestRounds: bestRounds,
   };
 
   let doc = await PlayerModel.findOneAndUpdate(filter, update, {
