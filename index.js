@@ -9,6 +9,8 @@ const port = 5000;
 const PlayerModel = require("./models/PLAYERS").Player;
 const RoundModel = require("./models/PLAYERS").Rounds;
 
+const players = require('./routes/players');
+
 // receive data from client in json format
 app.use(express.json());
 app.use(cors());
@@ -20,9 +22,7 @@ mongoose.connect(
   }
 );
 
-app.get("/", (req, res) => {
-  res.send("try the path: /api/players");
-});
+// app.use('/api/players', players)
 
 // get all players
 app.get("/api/players/", async (req, res) => {
